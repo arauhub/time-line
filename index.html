@@ -39,6 +39,11 @@
 
     .event-flag {
       z-index: 10;
+      transition: top 0.3s ease;
+    }
+
+    .event-flag.locked {
+      cursor: default;
     }
 
     .person-event {
@@ -283,6 +288,7 @@
       flex-direction: column;
       align-items: center;
       top: -240px;
+      cursor: pointer;
     }
 
     .event-flag-line {
@@ -381,7 +387,7 @@
     }
 
     .load-btn {
-      background: var(--primary-dark);
+      background: #4CAF50;
       color: white;
     }
 
@@ -407,6 +413,11 @@
 
     .language-btn {
       background: #4CAF50;
+      color: white;
+    }
+
+    .test-img-btn {
+      background: #FF9800;
       color: white;
     }
 
@@ -1757,7 +1768,6 @@
   </style>
 </head>
 <body>
-
 <!-- Modal de seleção de idioma -->
 <div class="language-modal" id="language-modal">
   <div class="language-selector">
@@ -1915,12 +1925,12 @@
     
     <button class="add-btn test-img-btn" data-i18n-title="export_png" data-i18n-aria="export_png">
       <svg viewBox="0 0 24 24" width="24" height="24">
-        <path fill="currentColor" d="M5,3A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H14.09C14.03,20.67 14,20.34 14,20A6,6 0 0,1 20,14C20.34,14 20.67,14.03 21,14.09V5C21,3.89 20.1,3 19,3H5M7,7H17V9H7V7M7,11H12V13H7V11M17,16V19H14V21H17V24L21,20L17,16Z"></path>
+        <path fill="currentColor" d="M5,2C3.89,2 3,2.89 3,4V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V8L15,2H5M5,4H14V8H19V18L17,16L15.5,17.5L13,15L9.5,18.5L8,17L5,20V4Z"></path>
       </svg>
     </button>
     <button class="add-btn pdf-btn" data-i18n-title="export_pdf" data-i18n-aria="export_pdf">
       <svg viewBox="0 0 24 24" width="24" height="24">
-        <path fill="currentColor" d="M19,3A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3H19M9.5,11.5H11V13.5H9.5V11.5M9.5,7.5H11V9.5H9.5V7.5M7,15H17V17H7V15M7,11.5H8V13.5H7V11.5M7,7.5H8V9.5H7V7.5Z"></path>
+        <path fill="currentColor" d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M9.5,17A1.5,1.5 0 0,0 11,15.5V14.5A1.5,1.5 0 0,0 9.5,13H7V17H9.5M8,14H9V15H8V14M12,17H14A2,2 0 0,0 16,15V14A2,2 0 0,0 14,12H12V17M13,13H14A1,1 0 0,1 15,14V15A1,1 0 0,1 14,16H13V13M16,17H20V16H17V15H19.5V14H17V13H20V12H16V17Z"></path>
       </svg>
     </button>
     
@@ -2237,7 +2247,7 @@
       <div class="template-description" data-i18n="template_biography_desc">Ideal para traçar a vida de personagens</div>
     </div>
     
-    <div class="template-item" data-template="project" data-show-grid="false">
+    <div class="template-item" data-template="project" data-show-grid="true">
       <div class="template-preview">
         <div class="template-preview-line" style="background-color: #FF5722;"></div>
       </div>
@@ -2445,6 +2455,8 @@ const translations = {
     all_unlocked: "Todos os personagens destravados",
     character_locked: "travado",
     character_unlocked: "destravado",
+    flag_locked: "Flag travada",
+    flag_unlocked: "Flag destravada",
     template_applied: "aplicado com sucesso",
     generating_pdf: "Gerando PDF...",
     pdf_generated: "PDF gerado com sucesso",
@@ -2611,6 +2623,8 @@ const translations = {
     all_unlocked: "All characters unlocked",
     character_locked: "locked",
     character_unlocked: "unlocked",
+    flag_locked: "Flag locked",
+    flag_unlocked: "Flag unlocked",
     template_applied: "applied successfully",
     generating_pdf: "Generating PDF...",
     pdf_generated: "PDF generated successfully",
@@ -2777,6 +2791,8 @@ const translations = {
     all_unlocked: "Todos los personajes desbloqueados",
     character_locked: "bloqueado",
     character_unlocked: "desbloqueado",
+    flag_locked: "Flag bloqueada",
+    flag_unlocked: "Flag desbloqueada",
     template_applied: "aplicado exitosamente",
     generating_pdf: "Generando PDF...",
     pdf_generated: "PDF generado exitosamente",
@@ -2874,6 +2890,116 @@ function setupLanguageSelector() {
       localStorage.setItem('language', currentLanguage);
       languageModal.classList.add('hidden');
       applyTranslations();
+      
+      // Re-renderizar eventos para atualizar tooltips e conteúdos dinâmicos
+      if (typeof renderEvents === 'function') {
+        renderEvents();
+      }
+      
+      // Atualizar estatísticas se o modal estiver aberto
+      const statsModal = document.getElementById('stats-modal');
+      if (statsModal && statsModal.classList.contains('active') && typeof updateStatistics === 'function') {
+        updateStatistics();
+      }
+      
+      // Forçar atualização do autocomplete se existir
+      if (typeof setupAutoComplete === 'function') {
+        setupAutoComplete();
+      }
+      
+      // Atualizar marcadores de data se existir
+      if (typeof createDateMarkers === 'function') {
+        createDateMarkers();
+      }
+      
+      // Forçar atualização de todos os elementos da interface
+      setTimeout(() => {
+        // Atualizar tooltips de eventos existentes
+        document.querySelectorAll('.person-event .event-content').forEach(content => {
+          const eventId = content.closest('.person-event').dataset.eventId;
+          if (eventId !== undefined && events[eventId]) {
+            const eventData = events[eventId];
+            if (eventData.type === 'person') {
+              let birthYearText = eventData.birthYear < 0 ? `${-eventData.birthYear} ${t('bc')}` : `${eventData.birthYear} ${t('ad')}`;
+              if (eventData.birthYear === 0) birthYearText = "";
+              let deathYearText = eventData.deathYear < 0 ? `${-eventData.deathYear} ${t('bc')}` : `${eventData.deathYear} ${t('ad')}`;
+              if (eventData.deathYear === 0) deathYearText = "";
+              
+              let age;
+              if (eventData.birthYear < 0 && eventData.deathYear > 0) {
+                age = eventData.deathYear - eventData.birthYear - 2;
+              } else {
+                age = eventData.deathYear - eventData.birthYear;
+              }
+              
+              const lockIconHtml = eventData.lockedPosition ? '<span class="lock-icon">🔒</span>' : '';
+              
+              content.innerHTML = `
+                <h4>${sanitizeHtml(eventData.title)}</h4>
+                <p>${eventData.impreciseBirth ? '(aprox.) ' : ''}${birthYearText} ${t('until')} ${eventData.impreciseDeath ? '(aprox.) ' : ''}${deathYearText}</p>
+                <p><strong>${age} ${t('age_years')}</strong> ${lockIconHtml}</p>
+              `;
+            }
+          }
+        });
+        
+        // Atualizar eventos tipo flag
+        document.querySelectorAll('.event-flag .event-content').forEach(content => {
+          const eventId = content.closest('.event-flag').dataset.eventId;
+          if (eventId !== undefined && events[eventId]) {
+            const eventData = events[eventId];
+            if (eventData.type === 'event') {
+              let yearText = eventData.year < 0 ? `${-eventData.year} ${t('bc')}` : `${eventData.year} ${t('ad')}`;
+              if (eventData.year === 0) yearText = "";
+              
+              const lockIconHtml = eventData.lockedPosition ? '<span class="lock-icon">🔒</span>' : '';
+              
+              content.innerHTML = `
+                <h3>${yearText}</h3>
+                <h4>${sanitizeHtml(eventData.title)}</h4>
+                ${lockIconHtml ? `<p>${lockIconHtml}</p>` : ''}
+              `;
+            }
+          }
+        });
+        
+        // Atualizar marcadores de data
+        document.querySelectorAll('.event-flag-line').forEach(line => {
+          const eventId = line.closest('.event-flag').dataset.eventId;
+          if (eventId !== undefined && events[eventId]) {
+            const eventData = events[eventId];
+            if (eventData.type === 'event') {
+              let yearText = eventData.year < 0 ? `${-eventData.year} ${t('bc')}` : `${eventData.year} ${t('ad')}`;
+              if (eventData.year === 0) yearText = "";
+              line.dataset.year = yearText;
+            }
+          }
+        });
+        
+        // Atualizar período tooltip
+        document.querySelectorAll('.period-overlay').forEach(periodEl => {
+          const eventId = parseInt(periodEl.dataset.eventId);
+          const eventData = events[eventId];
+          if (eventData && eventData.type === 'period') {
+            // Força a regeneração do tooltip ao passar o mouse
+            periodEl.addEventListener('mouseenter', function() {
+              const periodDescriptionBox = document.getElementById('period-description-box');
+              const periodTitleBox = document.getElementById('period-title');
+              const periodYearsBox = document.getElementById('period-years');
+              
+              if (periodTitleBox) periodTitleBox.textContent = eventData.title;
+              
+              let startYearText = eventData.startYear < 0 ? `${-eventData.startYear} ${t('bc')}` : `${eventData.startYear} ${t('ad')}`;
+              if (eventData.startYear === 0) startYearText = "";
+              let endYearText = eventData.endYear < 0 ? `${-eventData.endYear} ${t('bc')}` : `${eventData.endYear} ${t('ad')}`;
+              if (eventData.endYear === 0) endYearText = "";
+              
+              if (periodYearsBox) periodYearsBox.textContent = `${startYearText} ${t('until')} ${endYearText}`;
+            });
+          }
+        });
+        
+      }, 100);
     }
   });
 }
@@ -3024,7 +3150,8 @@ document.addEventListener('DOMContentLoaded', function() {
             personColor: "#FF5722",
             periodColor: "#FFAB91",
             bgClass: "",
-            gridLineColor: "rgba(0,0,0,0.05)"
+            gridLineColor: "rgba(255, 87, 34, 0.15)",
+            showVerticalLines: true
         },
         science: {
             name: "Ciência",
@@ -3763,8 +3890,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const timelineContainer = document.getElementById('timeline-container');
 
     timelineContainer.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.person-event[data-is-being-dragged="true"]')) return;
-         if (e.target.closest('.person-event') && e.button === 0) {
+        if (e.target.closest('.person-event[data-is-being-dragged="true"]') || 
+            e.target.closest('.event-flag[data-is-being-dragged="true"]')) return;
+         if ((e.target.closest('.person-event') || e.target.closest('.event-flag')) && e.button === 0) {
             // Permite arrastar se o clique não for no event-content (tooltip) do personagem
             if (e.target.closest('.event-content')) return;
         }
@@ -3994,7 +4122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             content.innerHTML = `
                 <h4>${sanitizeHtml(eventData.title)}</h4>
                 <p>${eventData.impreciseBirth ? '(aprox.) ' : ''}${birthYearText} ${t('until')} ${eventData.impreciseDeath ? '(aprox.) ' : ''}${deathYearText}</p>
-                <p><strong>${t('age_years')}: ${age} ${t('age_years')}</strong> ${lockIconHtml}</p>
+                <p><strong>${age} ${t('age_years')}</strong> ${lockIconHtml}</p>
             `;
             eventEl.appendChild(lifeSpan);
             eventEl.appendChild(label);
@@ -4025,8 +4153,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const position = ((eventData.year + 4500) / 7000) * 100;
             const eventEl = document.createElement('div');
             eventEl.className = 'event event-flag';
+            if (eventData.lockedPosition) {
+                eventEl.classList.add('locked');
+                eventEl.dataset.locked = 'true';
+            }
             eventEl.style.zIndex = '10';
             eventEl.style.left = `${position}%`;
+            
+            // Aplicar posição vertical personalizada se existir
+            if (eventData.flagVerticalPosition !== undefined) {
+                eventEl.style.top = `${eventData.flagVerticalPosition}px`;
+            }
+            
             let colorRgba = applyAlpha(eventData.color || '#4676E0', (eventData.opacity||100)/100);
             eventEl.style.setProperty('--event-color', colorRgba);
 
@@ -4050,10 +4188,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const content = document.createElement('div');
             content.className = 'event-content';
+            
+            const lockIconHtml = eventData.lockedPosition ? '<span class="lock-icon">🔒</span>' : '';
+            
             content.innerHTML = `
                 <h3>${yearText}</h3>
                 <h4>${sanitizeHtml(eventData.title)}</h4>
-                `;
+                ${lockIconHtml ? `<p>${lockIconHtml}</p>` : ''}
+            `;
+            
             eventEl.appendChild(line);
             eventEl.appendChild(content); 
             eventEl.setAttribute('role', 'button');
@@ -4392,7 +4535,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 title,
                 description: document.getElementById('event-description').value || '',
                 color: document.getElementById('event-color').value,
-                opacity: document.getElementById('event-opacity') ? parseInt(document.getElementById('event-opacity').value) : 100
+                opacity: document.getElementById('event-opacity') ? parseInt(document.getElementById('event-opacity').value) : 100,
+                flagVerticalPosition: -240, // Posição vertical padrão
+                lockedPosition: false // Não travado por padrão
             };
             
             events.push(newEventData);
@@ -4566,11 +4711,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Verifica se é um personagem para mostrar a opção de travar/destravar
+        // Verifica se é um personagem ou flag de evento para mostrar a opção de travar/destravar
         const eventId = parseInt(eventEl.dataset.eventId);
         const eventData = events[eventId];
         
-        if (eventData && eventData.type === 'person') {
+        if (eventData && (eventData.type === 'person' || eventData.type === 'event')) {
             contextToggleLock.style.display = 'block';
             contextToggleLock.textContent = eventData.lockedPosition ? t('unlock_position') : t('lock_position');
         } else {
@@ -4594,7 +4739,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const eventId = parseInt(selectedEventElement.dataset.eventId);
         const eventData = events[eventId];
         
-        if (eventData && eventData.type === 'person') {
+        if (eventData && (eventData.type === 'person' || eventData.type === 'event')) {
             // Inverte o estado de travamento
             eventData.lockedPosition = !eventData.lockedPosition;
             
@@ -4610,34 +4755,48 @@ document.addEventListener('DOMContentLoaded', function() {
             // Atualiza o conteúdo do evento para refletir a mudança
             const content = selectedEventElement.querySelector('.event-content');
             if (content) {
-                let birthYearText = eventData.birthYear < 0 ? `${-eventData.birthYear} ${t('bc')}` : `${eventData.birthYear} ${t('ad')}`;
-                if (eventData.birthYear === 0) birthYearText = "";
-                let deathYearText = eventData.deathYear < 0 ? `${-eventData.deathYear} ${t('bc')}` : `${eventData.deathYear} ${t('ad')}`;
-                if (eventData.deathYear === 0) deathYearText = "";
-                
-                let age;
-                if (eventData.birthYear < 0 && eventData.deathYear > 0) {
-                    age = eventData.deathYear - eventData.birthYear - 2;
-                } else {
-                    age = eventData.deathYear - eventData.birthYear;
+                if (eventData.type === 'person') {
+                    let birthYearText = eventData.birthYear < 0 ? `${-eventData.birthYear} ${t('bc')}` : `${eventData.birthYear} ${t('ad')}`;
+                    if (eventData.birthYear === 0) birthYearText = "";
+                    let deathYearText = eventData.deathYear < 0 ? `${-eventData.deathYear} ${t('bc')}` : `${eventData.deathYear} ${t('ad')}`;
+                    if (eventData.deathYear === 0) deathYearText = "";
+                    
+                    let age;
+                    if (eventData.birthYear < 0 && eventData.deathYear > 0) {
+                        age = eventData.deathYear - eventData.birthYear - 2;
+                    } else {
+                        age = eventData.deathYear - eventData.birthYear;
+                    }
+                    
+                    // Adicionar ou remover o ícone de cadeado baseado no estado de travamento
+                    const lockIconHtml = eventData.lockedPosition ? '<span class="lock-icon">🔒</span>' : '';
+                    
+                    content.innerHTML = `
+                        <h4>${sanitizeHtml(eventData.title)}</h4>
+                        <p>${eventData.impreciseBirth ? '(aprox.) ' : ''}${birthYearText} ${t('until')} ${eventData.impreciseDeath ? '(aprox.) ' : ''}${deathYearText}</p>
+                        <p><strong>${age} ${t('age_years')}</strong> ${lockIconHtml}</p>
+                    `;
+                } else if (eventData.type === 'event') {
+                    let yearText = eventData.year < 0 ? `${-eventData.year} ${t('bc')}` : `${eventData.year} ${t('ad')}`;
+                    if (eventData.year === 0) yearText = "";
+                    
+                    const lockIconHtml = eventData.lockedPosition ? '<span class="lock-icon">🔒</span>' : '';
+                    
+                    content.innerHTML = `
+                        <h3>${yearText}</h3>
+                        <h4>${sanitizeHtml(eventData.title)}</h4>
+                        ${lockIconHtml ? `<p>${lockIconHtml}</p>` : ''}
+                    `;
                 }
-                
-                // Adicionar ou remover o ícone de cadeado baseado no estado de travamento
-                const lockIconHtml = eventData.lockedPosition ? '<span class="lock-icon">🔒</span>' : '';
-                
-                content.innerHTML = `
-                    <h4>${sanitizeHtml(eventData.title)}</h4>
-                    <p>${eventData.impreciseBirth ? '(aprox.) ' : ''}${birthYearText} ${t('until')} ${eventData.impreciseDeath ? '(aprox.) ' : ''}${deathYearText}</p>
-                    <p><strong>${t('age_years')}: ${age} ${t('age_years')}</strong> ${lockIconHtml}</p>
-                `;
             }
             
             // Salva as alterações
             localStorage.setItem('timelineData', JSON.stringify({ events: window.events, zoom: currentZoom }));
             
+            const entityType = eventData.type === 'person' ? t('character') : 'Flag';
             showToast(eventData.lockedPosition ? 
-                `${t('character')} "${eventData.title}" ${t('character_locked')}` : 
-                `${t('character')} "${eventData.title}" ${t('character_unlocked')}`);
+                `${entityType} "${eventData.title}" ${eventData.type === 'person' ? t('character_locked') : t('flag_locked')}` : 
+                `${entityType} "${eventData.title}" ${eventData.type === 'person' ? t('character_unlocked') : t('flag_unlocked')}`);
         }
         
         hideContextMenu();
@@ -4955,6 +5114,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.person-event').forEach(eventEl => adjustPersonBarWidth(eventEl));
         localStorage.setItem('timelineData', JSON.stringify({ events: window.events, zoom: currentZoom }));
         enableVerticalDragging();
+        enableFlagVerticalDragging();
     }
 
 
@@ -5126,7 +5286,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isLocked = el.classList.contains('locked');
                 if (isLocked) return; // Se estiver travado, não permite arrastar
 
-                if (document.querySelector('.person-event[data-is-being-dragged="true"]')) return;
+                if (document.querySelector('.person-event[data-is-being-dragged="true"]') || 
+                    document.querySelector('.event-flag[data-is-being-dragged="true"]')) return;
 
                 e.preventDefault();
                 e.stopPropagation();
@@ -5205,6 +5366,87 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('mousemove', window.verticalDragMouseMoveListener);
         document.addEventListener('mouseup', window.verticalDragMouseUpListener);
     }
+
+    // Nova função para arrastar flags verticalmente
+    function enableFlagVerticalDragging() {
+        if (window.flagVerticalDragMouseMoveListener) {
+            document.removeEventListener('mousemove', window.flagVerticalDragMouseMoveListener);
+        }
+        if (window.flagVerticalDragMouseUpListener) {
+            document.removeEventListener('mouseup', window.flagVerticalDragMouseUpListener);
+        }
+
+        const eventFlags = document.querySelectorAll('.event-flag');
+
+        eventFlags.forEach(el => {
+            if (el.dataset.flagVerticalDragInitialized === 'true') return;
+
+            el.onmousedown = (e) => {
+                if (e.button !== 0 || e.target.closest('.event-content')) return;
+                
+                // Verifica se a flag está travada
+                const isLocked = el.classList.contains('locked');
+                if (isLocked) return; // Se estiver travada, não permite arrastar
+
+                if (document.querySelector('.person-event[data-is-being-dragged="true"]') || 
+                    document.querySelector('.event-flag[data-is-being-dragged="true"]')) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                el.dataset.isBeingDragged = 'true';
+                el.dataset.startY = e.clientY.toString();
+                const computedTop = window.getComputedStyle(el).top;
+                el.dataset.startTop = parseFloat(computedTop).toString();
+                el.style.transition = 'none';
+                document.body.style.cursor = 'grabbing';
+                el.style.zIndex = '10000'; 
+            };
+            el.dataset.flagVerticalDragInitialized = 'true';
+        });
+
+        window.flagVerticalDragMouseMoveListener = (e) => {
+            const draggedEl = document.querySelector('.event-flag[data-is-being-dragged="true"]');
+            if (!draggedEl) return;
+
+            const startY = parseFloat(draggedEl.dataset.startY);
+            const startTop = parseFloat(draggedEl.dataset.startTop);
+            const deltaY = e.clientY - startY;
+            const newTop = startTop + deltaY;
+            
+            // Limitar o movimento vertical da flag (entre -500px e -50px por exemplo)
+            const limitedTop = Math.max(-500, Math.min(-50, newTop));
+            draggedEl.style.top = `${limitedTop}px`;
+        };
+
+        window.flagVerticalDragMouseUpListener = (e) => {
+            const draggedEl = document.querySelector('.event-flag[data-is-being-dragged="true"]');
+            if (!draggedEl) return;
+
+            draggedEl.style.transition = 'top 0.3s ease';
+            document.body.style.cursor = 'default';
+            draggedEl.style.zIndex = '10';
+            
+            const finalTopPixels = parseFloat(draggedEl.style.top) || -240;
+            
+            const eventId = parseInt(draggedEl.dataset.eventId);
+            const eventData = window.events[eventId];
+
+            if (eventData && eventData.type === 'event') {
+                // Salvar a nova posição vertical
+                eventData.flagVerticalPosition = finalTopPixels;
+                localStorage.setItem('timelineData', JSON.stringify({ events: window.events, zoom: window.currentZoom }));
+            }
+
+            delete draggedEl.dataset.isBeingDragged;
+            delete draggedEl.dataset.startY;
+            delete draggedEl.dataset.startTop;
+        };
+
+        document.addEventListener('mousemove', window.flagVerticalDragMouseMoveListener);
+        document.addEventListener('mouseup', window.flagVerticalDragMouseUpListener);
+    }
+    
     enableVerticalDragging();
     
     // Atalhos de teclado
@@ -5212,7 +5454,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Evita executar atalhos quando estiver em um campo de texto
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         
-        // Alt + E: Adicionar evento
+		// Alt + E: Adicionar evento
         if (e.altKey && e.key === 'e') {
             e.preventDefault();
             addEventBtn.click();
@@ -5339,8 +5581,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const popupsToHide = [
             document.getElementById('character-description-popup'),
             document.getElementById('period-description-box')
-        ];
-        const originalDisplayStyles = popupsToHide.map(p => p ? p.style.display : '');
+        ];		
+		const originalDisplayStyles = popupsToHide.map(p => p ? p.style.display : '');
         popupsToHide.forEach(p => { if (p) p.style.display = 'none'; });
         
         showToast(t('generating_image'));
@@ -5362,7 +5604,7 @@ document.addEventListener('DOMContentLoaded', function() {
           document.body.removeChild(target);
         }).finally(() => {
             popupsToHide.forEach((p, index) => { if (p) p.style.display = originalDisplayStyles[index]; });
-			});
+        });
     }
     
     // Configuração para estatísticas
